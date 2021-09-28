@@ -1,0 +1,74 @@
+package org.example.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.coyote.http11.upgrade.UpgradeServletOutputStream;
+import org.example.model.TodoEntity;
+import org.example.model.TodoRequest;
+import org.example.service.TodoService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+
+import java.awt.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+@WebMvcTest(TodoController.class)
+class TodoControllerTest {
+
+    @Autowired
+    private MockMvc mvc;
+
+    @MockBean
+    TodoService todoService;
+
+    private TodoEntity expected;
+
+    @BeforeEach
+    void setup() {
+        this.expected = new TodoEntity();
+        this.expected.setId(123L);
+        this.expected.setTitle("Test TITLE");
+        this.expected.setOrder(0L);
+        this.expected.setCompleted(false);
+    }
+
+    @Test
+    void create() throws Exception {
+        when(this.todoService.add(any(TodoRequest.class)))
+                .then((i) -> {
+                    TodoRequest request =
+                            i.getArgument(0, TodoRequest.class);
+
+                    return new TodoEntity(this.expected.getId(),
+                                            request.getTitle(),
+                                            this.expected.getOrder(),
+                                            this.expected.getCompleted());
+                });
+
+        TodoRequest request = new TodoRequest();
+        request.setTitle("ANY TITLE");
+
+        ObjectMapper mapper = new ObjectMapper();
+        String content = mapper.writeValueAsString(request);
+
+        // Error
+        this.mvc.perform(MockMvcRequestBuilders.get("/")
+                .content(MediaType.APPLICATION_JSON_VALUE)
+                .content(content))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.title").value("ANY TITLE"));
+    }
+
+    @Test
+    void readOne() {
+    }
+}

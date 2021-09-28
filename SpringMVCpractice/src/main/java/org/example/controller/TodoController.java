@@ -11,6 +11,7 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RestController
@@ -53,38 +54,46 @@ public class TodoController {
         return ResponseEntity.ok(new TodoResponse(result));
     }
 
-    @GetMapping("{id}")
+    @GetMapping("{id}") // 맵핑 id 값 경로를 사용하기위해 @PathVariable을 사용
     public ResponseEntity<TodoResponse> readOne(@PathVariable Long id) {
         System.out.println("READ ONE");
-        TodoEntity result = this.service.searchById(id);
 
+        TodoEntity result = this.service.searchById(id);
         return ResponseEntity.ok(new TodoResponse(result));
     }
 
     @GetMapping
     public ResponseEntity<List<TodoResponse>> readAll() {
         System.out.println("READ ALL");
-        return null;
+
+        List<TodoEntity> List           = this.service.searchAll();
+        List<TodoResponse> responses    = List.stream().map(TodoResponse::new)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(responses);
     }
 
     @PatchMapping("{id}")
-    public ResponseEntity<TodoResponse> update() {
+    public ResponseEntity<TodoResponse> update(@PathVariable Long id, @RequestBody TodoRequest request) {
         System.out.println("UPDATE");
 
-        return null;
+        TodoEntity result = this.service.updateById(id, request);
+        return ResponseEntity.ok(new TodoResponse(result));
     }
 
     @DeleteMapping("{id}")
-    public ResponseEntity<?> deleteOne() {
+    public ResponseEntity<?> deleteOne(@PathVariable Long id) {
         System.out.println("DELETE");
 
-        return null;
+        this.service.deleteBuId(id);
+        return ResponseEntity.ok().build(); // 딱히 return값이 없기에 현 response엔티티 빌드함.
     }
 
     @DeleteMapping
     public ResponseEntity<?> deleteAll() {
         System.out.println("DELETE ALL");
 
-        return null;
+        this.service.deleteAll();
+        return ResponseEntity.ok().build();
     }
 }
